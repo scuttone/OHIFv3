@@ -585,6 +585,38 @@ const isMultiFrame = instance => {
   return instance.getRawValue('x00280008') > 1;
 };
 
+const is4DSeries = instances => {
+  if (instances[0].getRawValue('x00080060') !== 'MR') return 0; // only MR exams
+
+  // The goal here is to identify 4D series and the tags we'll use to sort them
+  // List tags used to identify and sort 4D series
+  const sortTagsList = Object.keys(instances[0]._instance.sort4DSeriesTags);
+
+  // Among those tags, identify those that have multiple values
+  var sortTags = Array(); // Declare an array to store tags to sort by
+  var sortTagsVal = Array(); // for debug purposes
+
+  sortTagsList.map(testedTag => { // loop through the tag list
+    var testedTagValues = instances.map(b => b._instance.sort4DSeriesTags[testedTag]);
+    var tagsUniqueValues = [...new Set(testedTagValues)];
+    if (tagsUniqueValues.length > 1 && tagsUniqueValues.length < 5) {
+      // If the tested tag has more than one value throughout the series..
+      // And less than 5 (i.e. not too many)
+      sortTags.push(testedTag); // Push to our new array
+      sortTagsVal.push(tagsUniqueValues); // debug
+    }
+  });
+  // If none of them do : return 0
+  if (sortTags.length === 0) return 0;
+
+  // Debug: report on tags for each series
+  console.log('%c4D series! Sorting tags:', 'color: black; background: #9ccef9; padding: 4px; font-weight: bold;');
+  sortTags.map((a, index) => console.log(a, sortTagsVal[index]));
+
+  // Return the array listing tags to sort by
+  return sortTags;
+};
+
 const makeDisplaySet = (series, instances) => {
   const instance = instances[0];
   const imageSet = new ImageSet(instances);
@@ -597,11 +629,12 @@ const makeDisplaySet = (series, instances) => {
     seriesTime: seriesData.seriesTime,
     seriesInstanceUid: series.getSeriesInstanceUID(),
     seriesNumber: instance.getRawValue('x00200011'),
-    seriesDescription: instance.getRawValue('x0008103e'),
+    seriesDescription: instance.getRawValue('x0008103e') || '',
     numImageFrames: instances.length,
     frameRate: instance.getRawValue('x00181063'),
     modality: instance.getRawValue('x00080060'),
     isMultiFrame: isMultiFrame(instance),
+    is4DSeries: is4DSeries(instances), // we need all the instances to compute this one
   });
 
   // Sort the images in this series if needed
@@ -616,6 +649,19 @@ const makeDisplaySet = (series, instances) => {
     });
   }
 
+  // If 4Dseries, sort according to identified tags
+  if (imageSet.is4DSeries) {
+      // Tell the user about sorting in series description
+      imageSet.seriesDescription += ' | 4D: ' + imageSet.is4DSeries;
+      // Sort series by each tag in the array
+      imageSet.is4DSeries.map(c => {
+        imageSet.sortBy((a, b) => {
+          if (a._instance.sort4DSeriesTags[c] > b._instance.sort4DSeriesTags[c]) return 1;
+          if (a._instance.sort4DSeriesTags[c] < b._instance.sort4DSeriesTags[c]) return -1;
+        });
+      });
+  }
+
   // Include the first image instance number (after sorted)
   imageSet.setAttribute(
     'instanceNumber',
@@ -624,7 +670,12 @@ const makeDisplaySet = (series, instances) => {
 
   const isReconstructable = isDisplaySetReconstructable(series, instances);
 
-  imageSet.isReconstructable = isReconstructable.value;
+  if (imageSet.is4DSeries) {
+    // Quick and nasty override (maybe make it part of isDisplaySetReconstructable ?)
+    imageSet.isReconstructable = false;
+  } else {
+    imageSet.isReconstructable = isReconstructable.value;
+  }
 
   if (isReconstructable.missingFrames) {
     // TODO -> This is currently unused, but may be used for reconstructing
