@@ -1,4 +1,4 @@
-import { api } from 'dicomweb-client';
+﻿import { api } from 'dicomweb-client';
 import DICOMWeb from '../../../DICOMWeb/';
 import RetrieveMetadataLoader from './retrieveMetadataLoader';
 import { sortStudySeries, sortingCriteria } from '../../sortStudy';
@@ -66,12 +66,16 @@ function makeSeriesAsyncLoader(
 export default class RetrieveMetadataLoaderAsync extends RetrieveMetadataLoader {
   configLoad() {
     const { server } = this;
-
-    const client = new api.DICOMwebClient({
-      url: server.qidoRoot,
-      headers: DICOMWeb.getAuthorizationHeader(server),
-    });
-
+	
+	
+	var options = {
+		url: server.baseUrl,
+        headers: DICOMWeb.getAuthorizationHeader(server),
+		qidoURLPrefix: server.qidoURLPrefix,
+		wadoURLPrefix: server.wadoURLPrefix,
+	};
+	
+	const client = new api.DICOMwebClient(options);
     this.client = client;
   }
 
