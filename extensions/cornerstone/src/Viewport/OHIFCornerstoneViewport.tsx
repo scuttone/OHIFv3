@@ -260,9 +260,9 @@ const OHIFCornerstoneViewport = React.memo(props => {
 
       cleanUpServices();
 
-      const viewportInfo = cornerstoneViewportService.getViewportInfoByIndex(
-        viewportIndex
-      );
+        const viewportInfo = cornerstoneViewportService.getViewportInfoByIndex(
+          viewportIndex
+        );
 
       cornerstoneViewportService.disableElement(viewportIndex);
 
@@ -411,33 +411,33 @@ const OHIFCornerstoneViewport = React.memo(props => {
 
   return (
     <React.Fragment>
-      <div className="viewport-wrapper">
-        <ReactResizeDetector
+    <div className="viewport-wrapper">
+      <ReactResizeDetector
           refreshMode="debounce"
           refreshRate={50} // Wait 50 ms after last move to render
-          onResize={onResize}
-          targetRef={elementRef.current}
-        />
-        <div
-          className="cornerstone-viewport-element"
-          style={{ height: '100%', width: '100%' }}
-          onContextMenu={e => e.preventDefault()}
-          onMouseDown={e => e.preventDefault()}
-          ref={elementRef}
-        ></div>
-        <CornerstoneOverlays
-          viewportIndex={viewportIndex}
+        onResize={onResize}
+        targetRef={elementRef.current}
+      />
+      <div
+        className="cornerstone-viewport-element"
+        style={{ height: '100%', width: '100%' }}
+        onContextMenu={e => e.preventDefault()}
+        onMouseDown={e => e.preventDefault()}
+        ref={elementRef}
+      ></div>
+      <CornerstoneOverlays
+        viewportIndex={viewportIndex}
           toolBarService={toolbarService}
-          element={elementRef.current}
-          scrollbarHeight={scrollbarHeight}
-          servicesManager={servicesManager}
-        />
+        element={elementRef.current}
+        scrollbarHeight={scrollbarHeight}
+        servicesManager={servicesManager}
+      />
         <CinePlayer
           enabledVPElement={enabledVPElement}
           viewportIndex={viewportIndex}
           servicesManager={servicesManager}
         />
-      </div>
+    </div>
       <div className="absolute w-full">
         {viewportDialogState.viewportIndex === viewportIndex && (
           <Notification
@@ -483,16 +483,16 @@ function _subscribeToJumpToMeasurementEvents(
       if (cacheJumpToMeasurementEvent.cornerstoneViewport !== viewportIndex) {
         return;
       }
-      _jumpToMeasurement(
-        measurement,
-        elementRef,
-        viewportIndex,
-        measurementService,
-        displaySetService,
-        viewportGridService,
-        cornerstoneViewportService
-      );
-    }
+        _jumpToMeasurement(
+          measurement,
+          elementRef,
+          viewportIndex,
+          measurementService,
+          displaySetService,
+          viewportGridService,
+          cornerstoneViewportService
+        );
+      }
   );
 
   return unsubscribe;

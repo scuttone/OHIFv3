@@ -124,7 +124,7 @@ function _getDisplaySetsFromSeries(
   if (
     !ConceptNameCodeSequence ||
     ConceptNameCodeSequence.CodeValue !==
-      CodeNameCodeSequenceValues.ImagingMeasurementReport
+    CodeNameCodeSequenceValues.ImagingMeasurementReport
   ) {
     servicesManager.services.uiNotificationService.show({
       title: 'DICOM SR',
@@ -364,7 +364,7 @@ function _getMeasurements(ImagingMeasurementReportContentSequence) {
     trackingUniqueIdentifier => {
       const mergedContentSequence =
         mergedContentSequencesByTrackingUniqueIdentifiers[
-          trackingUniqueIdentifier
+        trackingUniqueIdentifier
         ];
 
       const measurement = _processMeasurement(mergedContentSequence);
@@ -404,7 +404,7 @@ function _getMergedContentSequencesByTrackingUniqueIdentifiers(
 
     if (
       mergedContentSequencesByTrackingUniqueIdentifiers[
-        trackingUniqueIdentifier
+      trackingUniqueIdentifier
       ] === undefined
     ) {
       // Add the full ContentSequence
@@ -519,9 +519,9 @@ function _processNonGeometricallyDefinedMeasurement(mergedContentSequence) {
   const findingSites = mergedContentSequence.filter(
     item =>
       item.ConceptNameCodeSequence.CodingSchemeDesignator ===
-        CodingSchemeDesignators.SRT &&
+      CodingSchemeDesignators.SRT &&
       item.ConceptNameCodeSequence.CodeValue ===
-        CodeNameCodeSequenceValues.FindingSite
+      CodeNameCodeSequenceValues.FindingSite
   );
 
   const measurement = {
@@ -538,7 +538,7 @@ function _processNonGeometricallyDefinedMeasurement(mergedContentSequence) {
       finding.ConceptCodeSequence.CodingSchemeDesignator
     ) &&
     finding.ConceptCodeSequence.CodeValue ===
-      CodeNameCodeSequenceValues.CornerstoneFreeText
+    CodeNameCodeSequenceValues.CornerstoneFreeText
   ) {
     measurement.labels.push({
       label: CORNERSTONE_FREETEXT_CODE_VALUE,
@@ -554,7 +554,7 @@ function _processNonGeometricallyDefinedMeasurement(mergedContentSequence) {
           FindingSite.ConceptCodeSequence.CodingSchemeDesignator
         ) &&
         FindingSite.ConceptCodeSequence.CodeValue ===
-          CodeNameCodeSequenceValues.CornerstoneFreeText
+        CodeNameCodeSequenceValues.CornerstoneFreeText
     );
 
     if (cornerstoneFreeTextFindingSite) {

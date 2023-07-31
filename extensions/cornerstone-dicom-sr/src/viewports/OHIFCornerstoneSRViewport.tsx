@@ -1,7 +1,12 @@
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import OHIF, { utils, ServicesManager, ExtensionManager } from '@ohif/core';
+import OHIF, {
+  utils,
+  ServicesManager,
+  ExtensionManager,
+  classes,
+} from '@ohif/core';
 
 import { setTrackingUniqueIdentifiersForElement } from '../tools/modules/dicomSRModule';
 
@@ -9,6 +14,7 @@ import { Icon, Tooltip, useViewportGrid, ViewportActionBar } from '@ohif/ui';
 import hydrateStructuredReport from '../utils/hydrateStructuredReport';
 
 const { formatDate } = utils;
+const { ImageSet } = classes;
 
 const MEASUREMENT_TRACKING_EXTENSION_ID =
   '@ohif/extension-measurement-tracking';
@@ -74,22 +80,26 @@ function OHIFCornerstoneSRViewport(props) {
     // if no panels from measurement-tracking extension is used, this code will run
     trackedMeasurements = null;
     sendTrackedMeasurementsEvent = (eventName, { displaySetInstanceUID }) => {
-      measurementService.clearMeasurements();
+      const { StudyInstanceUID } = srDisplaySet;
+      measurementService.clearStudyMeasurements(StudyInstanceUID);
       const { SeriesInstanceUIDs } = hydrateStructuredReport(
         { servicesManager, extensionManager },
         displaySetInstanceUID
       );
-      const displaySets = displaySetService.getDisplaySetsForSeries(
-        SeriesInstanceUIDs[0]
-      );
+      const displaySets =
+        (srDisplaySet.keyImageDisplaySet && [
+          srDisplaySet.keyImageDisplaySet,
+        ]) ||
+        displaySetService.getDisplaySetsForSeries(SeriesInstanceUIDs[0]);
       if (displaySets.length) {
         viewportGridService.setDisplaySetsForViewports([
           {
-            viewportIndex: activeViewportIndex,
-            displaySetInstanceUIDs: [displaySets[0].displaySetInstanceUID],
+          viewportIndex: activeViewportIndex,
+          displaySetInstanceUIDs: [displaySets[0].displaySetInstanceUID],
           },
         ]);
       }
+      measurementService.setSeriesInformation(StudyInstanceUID, srDisplaySet);
     };
   }
 
@@ -425,19 +435,76 @@ OHIFCornerstoneSRViewport.defaultProps = {
   customProps: {},
 };
 
+const findInstance = (measurement, displaySetService: DisplaySetService) => {
+  const {
+    displaySetInstanceUID,
+    ReferencedSOPInstanceUID: sopUid,
+  } = measurement;
+  const referencedDisplaySet = displaySetService.getDisplaySetByUID(
+    displaySetInstanceUID
+  );
+  if (!referencedDisplaySet.images) return;
+  return referencedDisplaySet.images.find(it => it.SOPInstanceUID === sopUid);
+};
+
 async function _getViewportReferencedDisplaySetData(
   displaySet,
   measurementSelected,
   displaySetService
 ) {
   const { measurements } = displaySet;
-  const measurement = measurements[measurementSelected];
 
-  const { displaySetInstanceUID } = measurement;
+  if (!displaySet.keyImageDisplaySet) {
+    const findReferences = ds => {
+      const instances = [];
+      const instanceByUrl = {};
+      for (const measurement of ds.measurements) {
+        const instance = findInstance(measurement, displaySetService);
+        if (!instance) {
+          console.log('Measurement', measurement, 'had no instances found');
+          continue;
+        }
 
-  const referencedDisplaySet = displaySetService.getDisplaySetByUID(
-    displaySetInstanceUID
-  );
+        // TODO - find actual URL
+        const { imageId } = measurement;
+        if (!imageId) continue;
+        if (instanceByUrl[imageId]) continue;
+        instanceByUrl[imageId] = instance;
+        instances.push(instance);
+      }
+      return instances;
+    };
+    const instances = findReferences(displaySet);
+    const updateInstances = function() {
+      this.images.splice(0, this.images.length, ...findReferences(displaySet));
+      this.numImageFrames = this.images.length;
+    };
+    const imageSet = new ImageSet(instances);
+    const instance = instances[0];
+    imageSet.setAttributes({
+      displaySetInstanceUID: imageSet.uid, // create a local alias for the imageSet UID
+      SeriesDate: instance.SeriesDate,
+      SeriesTime: instance.SeriesTime,
+      SeriesInstanceUID: imageSet.uid,
+      StudyInstanceUID: instance.StudyInstanceUID,
+      SeriesNumber: instance.SeriesNumber || 0,
+      SOPClassUID: instance.SOPClassUID,
+      SeriesDescription: `${displaySet.SeriesDescription} KO ${displaySet.instance.SeriesNumber}`,
+      Modality: 'KO',
+      isMultiFrame: false,
+      numImageFrames: instances.length,
+      SOPClassHandlerId: `@ohif/extension-default.sopClassHandlerModule.stack`,
+      isReconstructable: false,
+      madeInClient: true,
+      updateInstances,
+    });
+
+    displaySetService.addDisplaySets(imageSet);
+
+    displaySet.keyImageDisplaySet = imageSet;
+  }
+
+  const referencedDisplaySet = displaySet.keyImageDisplaySet;
 
   const image0 = referencedDisplaySet.images[0];
   const referencedDisplaySetMetadata = {

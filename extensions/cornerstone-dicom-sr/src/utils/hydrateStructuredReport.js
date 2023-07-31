@@ -2,6 +2,7 @@ import { utilities, metaData } from '@cornerstonejs/core';
 import OHIF, { DicomMetadataStore } from '@ohif/core';
 import getLabelFromDCMJSImportedToolData from './getLabelFromDCMJSImportedToolData';
 import { adaptersSR } from '@cornerstonejs/adapters';
+import convertCode from './convertCode';
 
 const { guid } = OHIF.utils;
 const { MeasurementReport, CORNERSTONE_3D_TAG } = adaptersSR.Cornerstone3D;
@@ -11,13 +12,10 @@ const CORNERSTONE_3D_TOOLS_SOURCE_VERSION = '0.1';
 
 const supportedLegacyCornerstoneTags = ['cornerstoneTools@^4.0.0'];
 
-const convertCode = (codingValues, code) => {
-  if (!code || code.CodingSchemeDesignator === 'CORNERSTONEJS') return;
-  const ref = `${code.CodingSchemeDesignator}:${code.CodeValue}`;
-  const ret = { ...codingValues[ref], ref, ...code, text: code.CodeMeaning };
-  return ret;
-};
-
+/**
+ * Takes a list of codes and runs them through convert, only adding the ones
+ * which are not CORNERSTONEJS issued to the result.
+ */
 const convertSites = (codingValues, sites) => {
   if (!sites || !sites.length) return;
   const ret = [];
@@ -32,7 +30,6 @@ const convertSites = (codingValues, sites) => {
 
 /**
  * Hydrates a structured report, for default viewports.
- *
  */
 export default function hydrateStructuredReport(
   { servicesManager, extensionManager },
@@ -287,7 +284,7 @@ function _mapLegacyDataSet(dataset) {
   return dataset;
 }
 
-const toArray = function (x) {
+const toArray = function(x) {
   return Array.isArray(x) ? x : [x];
 };
 
