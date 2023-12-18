@@ -29,7 +29,9 @@ import OHIFDicomSegmentationExtension from '@ohif/extension-dicom-segmentation';
 import OHIFDicomRtExtension from '@ohif/extension-dicom-rt';
 import OHIFDicomMicroscopyExtension from '@ohif/extension-dicom-microscopy';
 import OHIFDicomPDFExtension from '@ohif/extension-dicom-pdf';
-//import OHIFDicomTagBrowserExtension from '@ohif/extension-dicom-tag-browser';
+import OHIFDicomDownloaderExtension from '@ohif/extension-dicom-study-downloader';
+import OHIFDicomInstancesUploaderExtension from '@ohif/extension-dicom-instances-uploader';
+import OHIFDicomTagBrowserExtension from '@ohif/extension-dicom-tag-browser';
 // Add this for Debugging purposes:
 //import OHIFDebuggingExtension from '@ohif/extension-debugging';
 import { version } from '../package.json';
@@ -53,8 +55,10 @@ const appProps = {
     OHIFDicomPDFExtension,
     OHIFDicomSegmentationExtension,
     OHIFDicomRtExtension,
+    OHIFDicomDownloaderExtension,
+    OHIFDicomInstancesUploaderExtension,
     //OHIFDebuggingExtension,
-    //OHIFDicomTagBrowserExtension,
+    OHIFDicomTagBrowserExtension,
   ],
 };
 
